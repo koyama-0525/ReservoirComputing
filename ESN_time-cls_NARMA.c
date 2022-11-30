@@ -16,20 +16,24 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <string>
+#include <cstdlib> 
+#include <iostream>
+using namespace std;
 #define epsilon_conv 1.0e-8
 
-double reservoir(double u);
-double f(double y, int typ);
-double rand(void);
-double grand(void);
-double conj_grad(void);
+double reservoir(double u);  //リザーバー更新
+double f(double y, int typ); //関数f
+double rand2(void);           //ランダム
+double grand2(void);          //ガウスランダム
+double conj_grad(void);      //共役勾配法
 double narma(int cls);
 
 int f_step; // 最大前方ステップ数 < 100
 int idx;
 int flag_cut;
 int length, tau[10];                           // NARMA param. (tau < length)
-double k1[10], k2[10], k3[10], k4[10];         // NARMA param.
+double k1[10], k2[10], k3[10], k4[10];         // NARMA param. NARMAのパラメータ
 double ut0_s[2][10010], yt0_s[2][10010];       // Task data for Training
 double ut1_s[2][10010], yt1_s[2][10010];       // Task data for Validation
 double ut2_s[2][505][205], yt2_s[2][505][205]; // Task data for Test
@@ -44,7 +48,7 @@ double wran, aran, bran, cran;
 double pi, pi2;
 double Q[505][505], b[505], a[505]; // Q:matrix_a, b:matrix_b, a[]:方程式の未知数
 double ut[55], yt[55];
-
+double Q0[505][505];                    // Q matrix for lambda=0
 int main()
 {
     FILE *fp1, *fp2, *fp3;
@@ -65,7 +69,7 @@ int main()
     int cls, n_cls, smp, n_smp, c1, c2, c_rsv;
     long over[42][42];
 
-    double Q0[505][505];                    // Q matrix for lambda=0
+    
     double lambda_val[20], lambda, dpw, pw; // regularization param.
     double a_reg[2][20][505];               // weights in regularized learning
     double w0[505][81], epsilon[505], u;
@@ -84,22 +88,38 @@ int main()
     double acc_rate, err_rate;             // accuracy & error rates
     double acc_av[22], err_av[22];
 
-    n_rsv = 10;   // #(Reservoir samples)
-    type_rsv = 1; // Reservoir type: ESN rand.(1)
+    n_rsv = 1;   // #(Reservoir samples)
+    type_rsv = 1; // Reservoir type: ESN rand2.(1)
     n_size = 100; // # units
     k_con = 10;
 
     n_cls = 2; // #(signal classes)
-    wash_out = 500;
-    wash_out_test = 50;
-    step[0] = 1000 + wash_out;     // training
-    step[1] = 1000 + wash_out;     // validation
-    step[2] = 100 + wash_out_test; // test
-    n_smp = 500;                   // #(test data sets)/2
+    wash_out = 1440;
+    wash_out_test = 80;
+    step[0] = 1440 + wash_out;     // training
+    step[1] = 1440 + wash_out;     // validation
+    step[2] = 80 + wash_out_test; // test
+    n_smp = 18;
+
+    // n_cls = 2; // #(signal classes)
+    // wash_out = 500;
+    // wash_out_test = 50;
+    // step[0] = 1000 + wash_out;     // training
+    // step[1] = 1000 + wash_out;     // validation
+    // step[2] = 150 + wash_out_test; // test
+    // n_smp = 10;
+
+    //wash_out = 500;
+    //wash_out_test = 50;
+    //step[0] = 1000 + wash_out;     // training
+    //step[1] = 1000 + wash_out;     // validation
+    //step[2] = 100 + wash_out_test; // test
+    
+    //n_smp = 500;                   // #(test data sets)/2
 
     p0 = 0.0;
-    dp = 0.1;
-    m_max = 10; // # mixture rates; p=#(non.-lin.)/#(total)
+    dp = 0.2;
+    m_max = 5; // # mixture rates; p=#(non.-lin.)/#(total)
     n_reg = 19;
     dpw = 0.25;
 
@@ -115,7 +135,7 @@ int main()
     pi = 3.1415926535897932;
     pi2 = 2.0 * pi;
 
-    seed1 = 1.0; // seed for rand()
+    seed1 = 1.0; // seed for rand2()
     seed2 = 5.0; // seed for random ESN realization
     wran = seed1;
     aran = 3.2771e4;
@@ -173,24 +193,36 @@ int main()
 
     mode = 0;
     cls = 0;
+    FILE *fp_;
     while (cls <= n_cls - 1)
     {
+        t = 0;
+        if (cls == 0)
+            fp_ = fopen("total-nasi_training.csv", "r");
+            //fp_ = fopen("narma.csv", "r");
+        if (cls == 1)
+            fp_ = fopen("total-musi_n_training.csv", "r");
+            //fp_ = fopen("narma2.csv", "r");
+        if (fp_ == NULL)
+            printf("cannot open file\n");
         flag_cut = 0;
-        for (i = 0; i <= length; i++)
-        { // NARMA-X
-            ut[i] = 0.0;
-            yt[i] = 0.0;
+        char input[256], output[256];
+        while(fscanf(fp_,"%[^,],%s",input,output)>1){ 
+            ut0_s[cls][t] = atof(input);
+            yt0_s[cls][t] = atof(output);
+            //printf("%d %d, %lf, %lf\n", cls, t, ut0_s[cls][t], yt0_s[cls][t]);
+            t++;
         }
-        for (t = 0; t <= step[mode] + f_step; t++)
-        {
-            u = u_min + u_delta * rand();
-            for (l = length; l >= 1; l--)
-                ut[l] = ut[l - 1];
-            ut[0] = u;
-            ut0_s[cls][t] = narma(cls);
-        }
-        for (t = 0; t <= step[mode]; t++)
-            yt0_s[cls][t] = ut0_s[cls][t + f_step];
+        // for (t = 0; t <= step[mode] + f_step; t++)
+        // {
+        //     u = u_min + u_delta * rand2();
+        //     for (l = length; l >= 1; l--)
+        //         ut[l] = ut[l - 1];
+        //     ut[0] = u;
+        //     ut0_s[cls][t] = narma(cls);
+        // }
+        // for (t = 0; t <= step[mode]; t++)
+        //     yt0_s[cls][t] = ut0_s[cls][t + f_step];
         cls++;
         if (flag_cut != 0)
             cls--;
@@ -205,15 +237,31 @@ int main()
     cls = 0;
     while (cls <= n_cls - 1)
     {
+        t = 0;
+        if (cls == 0)
+            fp_ = fopen("total-nasi_validation.csv", "r");
+            //fp_ = fopen("narma.csv", "r");
+        if (cls == 1)
+            fp_ = fopen("total-musi_n_validation.csv", "r");
+            //fp_ = fopen("narma2.csv", "r");
+        if (fp_ == NULL)
+            printf("cannot open file\n");
         flag_cut = 0;
-        for (i = 0; i <= length; i++)
+        char input[256], output[256];
+        while(fscanf(fp_,"%[^,],%s",input,output)>1){ 
+            ut1_s[cls][t] = atof(input);
+            yt1_s[cls][t] = atof(output);
+            //printf("%d %d, %lf, %lf\n",cls, t, ut1_s[cls][t], yt1_s[cls][t]);
+            t++;
+        }
+        /*for (i = 0; i <= length; i++)
         { // NARMA-X
             ut[i] = 0.0;
             yt[i] = 0.0;
         }
         for (t = 0; t <= step[mode] + f_step; t++)
         {
-            u = u_min + u_delta * rand();
+            u = u_min + u_delta * rand2();
             for (l = length; l >= 1; l--)
                 ut[l] = ut[l - 1];
             ut[0] = u;
@@ -221,6 +269,7 @@ int main()
         }
         for (t = 0; t <= step[mode]; t++)
             yt1_s[cls][t] = ut1_s[cls][t + f_step];
+        */
         cls++;
         if (flag_cut != 0)
             cls--;
@@ -235,17 +284,42 @@ int main()
     for (cls = 0; cls <= n_cls - 1; cls++)
     {
         smp = 1;
+        
         while (smp <= n_smp)
-        {
+        {   
+            t = 0;
+            if (cls == 0)
+                fp_ = fopen("total-nasi_test.csv", "r");
+                //fp_ = fopen("narma.csv", "r");
+            if (cls == 1)
+                fp_ = fopen("total-musi_n_test.csv", "r");
+                //fp_ = fopen("narma2.csv", "r");
+            if (fp_ == NULL)
+                printf("cannot open file\n");
             flag_cut = 0;
-            for (i = 0; i <= length; i++)
+            char input[256], output[256];
+            
+            
+            int r = 0;
+            while(fscanf(fp_,"%[^,],%s",input,output)>1){
+                if(int(r / 160) == smp - 1){//行読み込むごとに
+                        ut2_s[cls][smp][t] = atof(input);
+                        yt2_s[cls][smp][t] = atof(output);
+                    //if (t % 5 == 0)
+                        //printf("%d, %d %d, %lf, %lf\n", cls, smp, t, ut2_s[cls][smp][t], yt2_s[cls][smp][t]);
+                    t++;
+                }
+                r++;
+                if (r >= 160 * n_smp) break;
+            }
+            /*for (i = 0; i <= length; i++)
             { // NARMA-X
                 ut[i] = 0.0;
                 yt[i] = 0.0;
             }
             for (t = 0; t <= step[mode] + f_step; t++)
             {
-                u = u_min + u_delta * rand();
+                u = u_min + u_delta * rand2();
                 for (l = length; l >= 1; l--)
                     ut[l] = ut[l - 1];
                 ut[0] = u;
@@ -253,6 +327,7 @@ int main()
             }
             for (t = 0; t <= step[mode]; t++)
                 yt2_s[cls][smp][t] = ut2_s[cls][smp][t + f_step];
+            */
             smp++;
             if (flag_cut != 0)
                 smp--;
@@ -288,12 +363,12 @@ int main()
     /*- Parameters -> Data file -*/
 
     fprintf(fp1, "# n_rsv=%d n_size=%d k_con=%d\n", n_rsv, n_size, k_con);
-    fprintf(fp1, "# step: train=%d, val.=%d, test=%d\n", step[0], step[1], step[2]);
+    fprintf(fp1,"# step: train=%d, val.=%d, test=%d, n_smp=%d\n",step[0],step[1],step[2],n_smp);
     fprintf(fp1, "# alpha: [%f,%f], d_alpha=%f\n", alpha_min, alpha_max, d_alpha);
     fprintf(fp1, "# sigma: [%f,%f], d_sigma=%f\n", sigma_min, sigma_max, d_sigma);
     fprintf(fp1, "# NARMA: f_step=%d\n", f_step);
-    fprintf(fp1, "#  cls=0: tau=%d, k1=%f, k2=%f, k3=%f, k4=%f\n", tau[0], k1[0], k2[0], k3[0], k4[0]);
-    fprintf(fp1, "#  cls=1: tau=%d, k1=%f, k2=%f, k3=%f, k4=%f\n", tau[1], k1[1], k2[1], k3[1], k4[1]);
+    //fprintf(fp1, "#  cls=0: tau=%d, k1=%f, k2=%f, k3=%f, k4=%f\n", tau[0], k1[0], k2[0], k3[0], k4[0]);
+    //fprintf(fp1, "#  cls=1: tau=%d, k1=%f, k2=%f, k3=%f, k4=%f\n", tau[1], k1[1], k2[1], k3[1], k4[1]);
     fprintf(fp1, "# --- file format ---\n");
     fprintf(fp1, "# p, acc_rate, err_rate, (sigma), (alpha), (lambda)\n");
     fprintf(fp1, "\n");
@@ -310,13 +385,13 @@ int main()
         //... Bias coeff. ...
 
         for (n = 1; n <= n_size; n++)
-            theta[n] = 2.0 * (rand() - 0.5);
+            theta[n] = 2.0 * (rand2() - 0.5);
 
         //... Input signal sign ...
 
         for (n = 1; n <= n_size; n++)
         {
-            if (rand() < 0.5)
+            if (rand2() < 0.5)
                 epsilon[n] = 1.0;
             else
                 epsilon[n] = -1.0;
@@ -324,7 +399,7 @@ int main()
 
         if (type_rsv == 1)
         {
-            //... Random-type normalized weights ...
+            //... random-type normalized weights ...
             for (n = 1; n <= n_size; n++)
             {
                 n_tmp = n_size;
@@ -332,12 +407,12 @@ int main()
                     unit_idx[i] = i;
                 for (k = 1; k <= k_con; k++)
                 {
-                    i = 1 + rand() * (double)n_tmp;
+                    i = 1 + rand2() * (double)n_tmp;
                     j = unit_idx[i];
                     ic[n][k] = j;                         // coupling: unit n <- unit j
-                                                          //          w0[n][k]=grand()/sqrt((double)k_con);  // Gaussian coupling
+                                                          //          w0[n][k]=grand2()/sqrt((double)k_con);  // Gaussian coupling
                     w0[n][k] = 1.0 / sqrt((double)k_con); // Binary coupling
-                    if (rand() < 0.5)
+                    if (rand2() < 0.5)
                         w0[n][k] = -w0[n][k];
 
                     if (i != n_tmp)
@@ -345,7 +420,7 @@ int main()
                     unit_idx[n_tmp] = 0;
                     n_tmp--;
                 }
-                w0[n][0] = 0.0 * grand(); // coupling to the bias unit
+                w0[n][0] = 0.0 * grand2(); // coupling to the bias unit
             }
         }
         else
@@ -406,10 +481,15 @@ int main()
 
                     /*..... RNN initial condition .....*/
 
-                    x0[0] = 1.0;
-                    for (n = 1; n <= n_size; n++)
-                        x0[n] = 2.0 * (1.0 - rand());
+                     x0[0] = 1.0;
+                     for (n = 1; n <= n_size; n++)
+                         x0[n] = 2.0 * (1.0 - rand2());
+                    
+                    //  x0[0] = 1.0;
+                    //  for (n = 1; n <= n_size; n++)
+                    //      x0[n] = 0.0;
 
+                    
                     /*====================  Training phase  ====================*/
 
                     for (cls = 0; cls <= n_cls - 1; cls++)
@@ -419,10 +499,16 @@ int main()
 
                         for (t = 0; t <= step[0]; t++)
                         {
-
                             u = ut0_s[cls][t]; // input signal: mode=0 (training)
 
                             /*..... Reservoir update .....*/
+                            
+                            // if(t % 80 == 0)
+                            // {
+                            //     x0[0] = 1.0;
+                            //     for (n = 1; n <= n_size; n++)
+                            //         x0[n] = 0.0;
+                            // }
 
                             reservoir(u);
 
@@ -432,12 +518,12 @@ int main()
                             {
                                 count_train++;
 
-//... Q=<xx> matrix ...
-#pragma omp parallel for private(n2)
+                                //... Q=<xx> matrix ...
+                                #pragma omp parallel for private(n2)
                                 for (n1 = 0; n1 <= n_size; n1++)
                                 {
                                     for (n2 = n1; n2 <= n_size; n2++)
-                                        Q[n1][n2] = Q[n1][n2] + x0[n1] * x0[n2];
+                                        Q[n1][n2] = Q[n1][n2] + x0[n1] * x0[n2]; //∑n1番目の状態変数xn1*n2番目の状態変数xn2
                                 }
 
                                 //... b=<tx> & <tt> ...
@@ -446,7 +532,7 @@ int main()
 
                                 t2 = t2 + target_r * target_r;
                                 for (n1 = 0; n1 <= n_size; n1++)
-                                    b[n1] = b[n1] + target_r * x0[n1];
+                                    b[n1] = b[n1] + target_r * x0[n1]; //∑目標出力y*ユニット状態変数x
                             }
 
                         } // Loop t (time)
@@ -486,8 +572,10 @@ int main()
                                 a[n] = 1.0;
                             //...
                             conj_grad();
-                            for (n = 0; n <= n_size; n++)
+                            for (n = 0; n <= n_size; n++) {
+                                //printf("%d, %lf\n", n, a[n]);
                                 a_reg[cls][lm][n] = a[n]; // weights for (Reg. param.)=lm
+                            }
                         }
 
                     } // Loop cls
@@ -495,9 +583,13 @@ int main()
                     /*====================  Validation phase  ====================*/
 
                     //... reset of RNN state (added) ...
-                    x0[0] = 1.0;
-                    for (n = 1; n <= n_size; n++)
-                        x0[n] = 2.0 * (1.0 - rand());
+                     x0[0] = 1.0;
+                     for (n = 1; n <= n_size; n++)
+                         x0[n] = 2.0 * (1.0 - rand2());
+
+                    // x0[0] = 1.0;
+                    // for (n = 1; n <= n_size; n++)
+                    //     x0[n] = 0.0;
                     //...
 
                     count_val = 0;
@@ -507,14 +599,18 @@ int main()
                         dty_ave[lm] = 0.0;
 
                     for (cls = 0; cls <= n_cls - 1; cls++)
-                    {
+                    {   
                         for (t = 0; t <= step[1]; t++)
                         {
 
                             u = ut1_s[cls][t]; // mode=1 (validation)
-
                             //..... Reservoir update .....
-
+                            // if(t % 80 == 0)
+                            // {
+                            //     x0[0] = 1.0;
+                            //     for (n = 1; n <= n_size; n++)
+                            //         x0[n] = 0.0;
+                            // }
                             reservoir(u);
 
                             //..... Reservoir output .....
@@ -532,10 +628,12 @@ int main()
                                     for (n = 0; n <= n_size; n++)
                                         y_out = y_out + a_reg[cls][lm][n] * x0[n];
                                     dty_ave[lm] = dty_ave[lm] + (t_out - y_out) * (t_out - y_out);
+                                    //printf("%d, %lf, %lf, %lf\n", t, x0[0], x0[1], y_out);
                                 }
                             }
 
                         } // Loop time
+                        //printf("%d, %lf\n", cls, dty_ave[0]);
                     }     // Loop cls
 
                     nmse_opt = 1.0e5;
@@ -545,10 +643,12 @@ int main()
                     {
                         dty_ave[lm] = dty_ave[lm] / (double)count_val;
                         nmse[lm] = dty_ave[lm] / (tt_ave - t_ave * t_ave);
+                        
                         if (nmse[lm] < nmse_opt)
                         {
                             lm_opt = lm;
                             nmse_opt = nmse[lm];
+                            //printf("%d, %d, %lf\n", cls, lm, nmse[lm]);
                         }
                     }
 
@@ -571,7 +671,8 @@ int main()
                         for (cls = 0; cls <= n_cls - 1; cls++)
                         {
                             for (n = 0; n <= n_size; n++)
-                                a_opt[cls][m][n] = a_reg[cls][lm_opt][n];
+                                //printf("%d %d %d %d %f\n",cls, n, m, lm_opt, a_reg[cls][lm_opt][n]);
+                                a_opt[cls][m][n] = a_reg[cls][lm_opt][n]; 
                         }
                     }
 
@@ -669,15 +770,15 @@ int main()
                     for (n = 1; n <= n_size; n++)
                         x0[n] = 0.0;
                     //...
-
                     for (t = 0; t <= step[2]; t++)
                     {
 
                         u = ut2_s[cls][smp][t]; // mode=2 (test)
-
                         //..... Reservoir update .....
-
+                        
                         reservoir(u);
+                        
+                        //printf("%d %d %d %f\n",cls, smp, t, u);
 
                         //..... Reservoir output .....
 
@@ -734,7 +835,7 @@ int main()
             alpha = alpha_min + d_alpha * (double)j2_test[m];
             sigma = sigma_min + d_sigma * (double)j1_test[m];
             lambda = lambda_val[lm_test[m]];
-            // fprintf(fp1,"%f %e %e %e %e %e\n",p,acc_rate,err_rate,sigma,alpha,lambda);
+            printf("%f %e %e %e %e %e\n",p,acc_rate,err_rate,sigma,alpha,lambda);
 
             acc_av[m] = acc_av[m] + acc_rate;
             err_av[m] = err_av[m] + err_rate;
@@ -782,6 +883,7 @@ double reservoir(double u)
         x[n] = f(y[n], type[n]);
         x0[n] = x[n];
     }
+    return 0.0;
 }
 
 /*==========   function f   ==========*/
@@ -814,7 +916,7 @@ double f(double y, int typ)
 
 /*==========  subroutine random  ==========*/
 
-double rand(void)
+double rand2(void)
 {
     int m;
     double rnd;
@@ -827,7 +929,7 @@ double rand(void)
 
 /*==========  subroutine Gauss random  ==========*/
 
-double grand(void)
+double grand2(void)
 {
     static int iset = 0;
     static double gset;
@@ -837,8 +939,8 @@ double grand(void)
     {
         do
         {
-            v1 = 2.0 * rand() - 1.0;
-            v2 = 2.0 * rand() - 1.0;
+            v1 = 2.0 * rand2() - 1.0;
+            v2 = 2.0 * rand2() - 1.0;
             rsq = v1 * v1 + v2 * v2;
         } while (rsq >= 1.0 || rsq == 0);
         fac = sqrt(-2.0 * log(rsq) / rsq);
@@ -936,7 +1038,7 @@ double conj_grad(void)
             r_norm = r_norm + r0[i] * r0[i];
         r_norm = sqrt(r_norm);
     }
-
+    return 0.0;
     // printf("ratio=%e \n",r_norm/b_norm);
 }
 
