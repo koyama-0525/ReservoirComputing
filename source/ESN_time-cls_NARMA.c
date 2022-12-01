@@ -13,14 +13,55 @@
 /*                         2022 Jan.         */
 /*                           by Yoshi        */
 /*                                           */
-
+#include <time.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include <string>
 #include <cstdlib> 
 #include <iostream>
 using namespace std;
 #define epsilon_conv 1.0e-8
+#define NOTHING_CLASS (0)
+#define MUSHI_N_CLASS (1)
+
+void fopen_input_output(char *filename, double *a, double *b)
+{
+    FILE *fp;
+    int t = 0;
+    fp = fopen(filename, "r");
+    char input[256], output[256];
+    while(fscanf(fp,"%[^,],%s",input,output)>1)
+    {
+        a[t] = atof(input);
+        b[t] = atof(output);
+        //printf("%d %d, %lf, %lf\n", cls, t, ut0_s[cls][t], yt0_s[cls][t]);
+        t++;
+    }
+}
+
+void fopen_input_output_test(char *filename, double a[][205], double b[][205], int len)
+{
+    FILE *fp;
+    int t = 0;
+    int r = 0;
+    fp = fopen(filename, "r");
+    char input[256], output[256];
+    int smp = 1;
+    while(fscanf(fp,"%[^,],%s",input,output)>1)
+    {
+        if(int(r / len) == smp - 1){
+            a[smp][t] = atof(input);
+            b[smp][t] = atof(output);
+            t++;
+            if (t >= len) {
+                smp++;
+                t = 0;
+            }
+        }
+        r++;
+    }
+}
 
 double reservoir(double u);  //リザーバー更新
 double f(double y, int typ); //関数f
@@ -135,124 +176,58 @@ int main()
         err_av[m] = 0.0;
     }
 
-    fp1 = fopen("acc.dat", "w");
-    fp2 = fopen("x0.dat", "w");
-    fp3 = fopen("x1.dat", "w");
+    char date[20];
+    time_t t1 = time(NULL);
+    struct tm tm = *localtime(&t1);
+    sprintf(date, "%d-%d-%d_%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    char filename11[50] = "input/acc_";
+    char filename12[50] = "input/x0_";
+    char filename13[50] = "input/x1_";
+    strcat(filename11, date);
+    strcat(filename12, date);
+    strcat(filename13, date);
+    strcat(filename11, ".dat");
+    strcat(filename12, ".dat");
+    strcat(filename13, ".dat");
+    fp1 = fopen(filename11, "w");
+    fp2 = fopen(filename12, "w");
+    fp3 = fopen(filename13, "w");
 
     n_cls = 2;  // 信号クラスの数
     f_step = 1; // 予測ステップ数
 
     //... training data ... mode=0(train.)
 
-    double test_a[100], test_b[100];
-    generate_input_output(test_a, test_b);
-    for(int i = 0; i < 100; i++) {
-        std::cerr << test_a[i] << "," << test_b[i] << std::endl;
-    }
-
+    
     mode = 0;
     cls = 0;
     FILE *fp_;
-    while (cls <= n_cls - 1)
-    {
-        t = 0;
-        if (cls == 0)
-            fp_ = fopen("total-nasi_training.csv", "r");
-            //fp_ = fopen("narma.csv", "r");
-        if (cls == 1)
-            fp_ = fopen("total-musi_n_training.csv", "r");
-            //fp_ = fopen("narma2.csv", "r");
-        if (fp_ == NULL)
-            printf("cannot open file\n");
-        flag_cut = 0;
-        char input[256], output[256];
-        while(fscanf(fp_,"%[^,],%s",input,output)>1){ 
-            ut0_s[cls][t] = atof(input);
-            yt0_s[cls][t] = atof(output);
-            //printf("%d %d, %lf, %lf\n", cls, t, ut0_s[cls][t], yt0_s[cls][t]);
-            t++;
-        }
-        
-        cls++;
-        if (flag_cut != 0)
-            cls--;
-    }
+    
+    char filename1[] = "total-nasi_training.csv";
+    char filename2[] = "total-musi_n_training.csv";
+    fopen_input_output(filename1,ut0_s[NOTHING_CLASS],yt0_s[NOTHING_CLASS]);
+    fopen_input_output(filename2,ut0_s[MUSHI_N_CLASS],yt0_s[MUSHI_N_CLASS]);
 
     //   for(t=0; t<=step[mode]; t++)
     //     fprintf(fp3,"%d %f %f %f %f\n",t,ut0_s[0][t],yt0_s[0][t],ut0_s[1][t],yt0_s[1][t]);
 
     //... validation data ... mode=1(val.)
 
-    mode = 1;
-    cls = 0;
-    while (cls <= n_cls - 1)
-    {
-        t = 0;
-        if (cls == 0)
-            fp_ = fopen("total-nasi_validation.csv", "r");
-            //fp_ = fopen("narma.csv", "r");
-        if (cls == 1)
-            fp_ = fopen("total-musi_n_validation.csv", "r");
-            //fp_ = fopen("narma2.csv", "r");
-        if (fp_ == NULL)
-            printf("cannot open file\n");
-        flag_cut = 0;
-        char input[256], output[256];
-        while(fscanf(fp_,"%[^,],%s",input,output)>1){ 
-            ut1_s[cls][t] = atof(input);
-            yt1_s[cls][t] = atof(output);
-            //printf("%d %d, %lf, %lf\n",cls, t, ut1_s[cls][t], yt1_s[cls][t]);
-            t++;
-        }
-        
-        cls++;
-        if (flag_cut != 0)
-            cls--;
-    }
-
+    char filename3[] = "total-nasi_validation.csv";
+    char filename4[] = "total-musi_n_validation.csv";
+    fopen_input_output(filename3,ut1_s[NOTHING_CLASS],yt1_s[NOTHING_CLASS]);
+    fopen_input_output(filename4,ut1_s[MUSHI_N_CLASS],yt1_s[MUSHI_N_CLASS]);
+    
     //   for(t=0; t<=step[mode]; t++)
     //     fprintf(fp3,"%d %f %f %f %f\n",t,ut1_s[0][t],yt1_s[0][t],ut1_s[1][t],yt1_s[1][t]);
 
     //... test data ... mode=2(test)
-
+    char filename5[] = "total-nasi_test.csv";
+    char filename6[] = "total-musi_n_test.csv";
+    fopen_input_output_test(filename5,ut2_s[NOTHING_CLASS],yt2_s[NOTHING_CLASS], 160);
+    fopen_input_output_test(filename6,ut2_s[MUSHI_N_CLASS],yt2_s[MUSHI_N_CLASS], 160);
     mode = 2;
-    for (cls = 0; cls <= n_cls - 1; cls++)
-    {
-        smp = 1;
-        
-        while (smp <= n_smp)
-        {   
-            t = 0;
-            if (cls == 0)
-                fp_ = fopen("total-nasi_test.csv", "r");
-                //fp_ = fopen("narma.csv", "r");
-            if (cls == 1)
-                fp_ = fopen("total-musi_n_test.csv", "r");
-                //fp_ = fopen("narma2.csv", "r");
-            if (fp_ == NULL)
-                printf("cannot open file\n");
-            flag_cut = 0;
-            char input[256], output[256];
-            
-            
-            int r = 0;
-            while(fscanf(fp_,"%[^,],%s",input,output)>1){
-                if(int(r / 160) == smp - 1){//行読み込むごとに
-                        ut2_s[cls][smp][t] = atof(input);
-                        yt2_s[cls][smp][t] = atof(output);
-                    //if (t % 5 == 0)
-                        //printf("%d, %d %d, %lf, %lf\n", cls, smp, t, ut2_s[cls][smp][t], yt2_s[cls][smp][t]);
-                    t++;
-                }
-                r++;
-                if (r >= 160 * n_smp) break;
-            }
-           
-            smp++;
-            if (flag_cut != 0)
-                smp--;
-        }
-    }
+ 
 
     //   smp=n_smp;
     //   for(t=0; t<=step[mode]; t++)
