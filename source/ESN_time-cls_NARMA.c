@@ -24,8 +24,8 @@ using namespace std;
 
 double reservoir(double u);  //リザーバー更新
 double f(double y, int typ); //関数f
-double rand2(void);           //ランダム
-double grand2(void);          //ガウスランダム
+double rand_(void);           //ランダム
+double grand_(void);   //ガウスランダム
 double conj_grad(void);      //共役勾配法
 
 int f_step; // 最大前方ステップ数 < 100
@@ -303,13 +303,13 @@ int main()
         //... Bias coeff. ...
 
         for (n = 1; n <= n_size; n++)
-            theta[n] = 2.0 * (rand2() - 0.5);
+            theta[n] = 2.0 * (rand_() - 0.5);
 
         //... Input signal sign ...
 
         for (n = 1; n <= n_size; n++)
         {
-            if (rand2() < 0.5)
+            if (rand_() < 0.5)
                 epsilon[n] = 1.0;
             else
                 epsilon[n] = -1.0;
@@ -325,12 +325,12 @@ int main()
                     unit_idx[i] = i;
                 for (k = 1; k <= k_con; k++)
                 {
-                    i = 1 + rand2() * (double)n_tmp;
+                    i = 1 + rand_() * (double)n_tmp;
                     j = unit_idx[i];
                     ic[n][k] = j;                         // coupling: unit n <- unit j
                                                           //          w0[n][k]=grand2()/sqrt((double)k_con);  // Gaussian coupling
                     w0[n][k] = 1.0 / sqrt((double)k_con); // Binary coupling
-                    if (rand2() < 0.5)
+                    if (rand_() < 0.5)
                         w0[n][k] = -w0[n][k];
 
                     if (i != n_tmp)
@@ -338,7 +338,7 @@ int main()
                     unit_idx[n_tmp] = 0;
                     n_tmp--;
                 }
-                w0[n][0] = 0.0 * grand2(); // coupling to the bias unit
+                w0[n][0] = 0.0 * grand_(); // coupling to the bias unit
             }
         }
         else
@@ -401,7 +401,7 @@ int main()
 
                      x0[0] = 1.0;
                      for (n = 1; n <= n_size; n++)
-                         x0[n] = 2.0 * (1.0 - rand2());
+                         x0[n] = 2.0 * (1.0 - rand_());
                     
                     //  x0[0] = 1.0;
                     //  for (n = 1; n <= n_size; n++)
@@ -503,7 +503,7 @@ int main()
                     //... reset of RNN state (added) ...
                      x0[0] = 1.0;
                      for (n = 1; n <= n_size; n++)
-                         x0[n] = 2.0 * (1.0 - rand2());
+                         x0[n] = 2.0 * (1.0 - rand_());
 
                     // x0[0] = 1.0;
                     // for (n = 1; n <= n_size; n++)
@@ -834,7 +834,7 @@ double f(double y, int typ)
 
 /*==========  subroutine random  ==========*/
 
-double rand2(void)
+double rand_(void)
 {
     int m;
     double rnd;
@@ -847,7 +847,7 @@ double rand2(void)
 
 /*==========  subroutine Gauss random  ==========*/
 
-double grand2(void)
+double grand_(void)
 {
     static int iset = 0;
     static double gset;
@@ -857,8 +857,8 @@ double grand2(void)
     {
         do
         {
-            v1 = 2.0 * rand2() - 1.0;
-            v2 = 2.0 * rand2() - 1.0;
+            v1 = 2.0 * rand_() - 1.0;
+            v2 = 2.0 * rand_() - 1.0;
             rsq = v1 * v1 + v2 * v2;
         } while (rsq >= 1.0 || rsq == 0);
         fac = sqrt(-2.0 * log(rsq) / rsq);
