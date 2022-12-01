@@ -27,13 +27,10 @@ double f(double y, int typ); //関数f
 double rand2(void);           //ランダム
 double grand2(void);          //ガウスランダム
 double conj_grad(void);      //共役勾配法
-double narma(int cls);
 
 int f_step; // 最大前方ステップ数 < 100
 int idx;
 int flag_cut;
-int length, tau[10];                           // NARMA param. (tau < length)
-double k1[10], k2[10], k3[10], k4[10];         // NARMA param. NARMAのパラメータ
 double ut0_s[2][10010], yt0_s[2][10010];       // Task data for Training
 double ut1_s[2][10010], yt1_s[2][10010];       // Task data for Validation
 double ut2_s[2][505][205], yt2_s[2][505][205]; // Task data for Test
@@ -45,7 +42,6 @@ double w[505][81], ep[505], theta[505];
 
 long flag_over; // Cutoff flag in linear unit
 double wran, aran, bran, cran;
-double pi, pi2;
 double Q[505][505], b[505], a[505]; // Q:matrix_a, b:matrix_b, a[]:方程式の未知数
 double ut[55], yt[55];
 double Q0[505][505];                    // Q matrix for lambda=0
@@ -101,14 +97,6 @@ int main()
     step[2] = 80 + wash_out_test; // test
     n_smp = 18;
 
-    // n_cls = 2; // #(signal classes)
-    // wash_out = 500;
-    // wash_out_test = 50;
-    // step[0] = 1000 + wash_out;     // training
-    // step[1] = 1000 + wash_out;     // validation
-    // step[2] = 150 + wash_out_test; // test
-    // n_smp = 10;
-
     //wash_out = 500;
     //wash_out_test = 50;
     //step[0] = 1000 + wash_out;     // training
@@ -132,9 +120,6 @@ int main()
     sigma_max = sigma_min + d_sigma * (double)j1_max;
     alpha_max = alpha_min + d_alpha * (double)j2_max;
 
-    pi = 3.1415926535897932;
-    pi2 = 2.0 * pi;
-
     seed1 = 1.0; // seed for rand2()
     seed2 = 5.0; // seed for random ESN realization
     wran = seed1;
@@ -154,42 +139,16 @@ int main()
     fp2 = fopen("x0.dat", "w");
     fp3 = fopen("x1.dat", "w");
 
-    /*-----------------  Generating time series of Henon map  -----------------*/
-
     n_cls = 2;  // 信号クラスの数
     f_step = 1; // 予測ステップ数
 
-    //----- NARMA-X parameters -----
-
-    length = 30;
-    u_max = 0.5; // max of driving term 'u'
-    u_min = 0.0; // min of driving term 'u'
-    u_delta = u_max - u_min;
-
-    //... パラメータ値（信号１）...
-    /*
-       tau[0]=9;
-       k1[0]=0.3;
-       k2[0]=0.05;
-       k3[0]=1.5;
-       k4[0]=0.01;  // k4=0.1(NARMA10), 0.01(NARMA20)
-    */
-
-    tau[0] = 9;
-    k1[0] = 0.3;
-    k2[0] = 0.05;
-    k3[0] = 1.5;
-    k4[0] = 0.1; // k4=0.1(NARMA10), 0.01(NARMA20)
-
-    //... パラメータ値（信号２）...
-
-    tau[1] = 8;
-    k1[1] = 0.3;
-    k2[1] = 0.05;
-    k3[1] = 1.5;
-    k4[1] = 0.1;
-
     //... training data ... mode=0(train.)
+
+    double test_a[100], test_b[100];
+    generate_input_output(test_a, test_b);
+    for(int i = 0; i < 100; i++) {
+        std::cerr << test_a[i] << "," << test_b[i] << std::endl;
+    }
 
     mode = 0;
     cls = 0;
@@ -213,16 +172,7 @@ int main()
             //printf("%d %d, %lf, %lf\n", cls, t, ut0_s[cls][t], yt0_s[cls][t]);
             t++;
         }
-        // for (t = 0; t <= step[mode] + f_step; t++)
-        // {
-        //     u = u_min + u_delta * rand2();
-        //     for (l = length; l >= 1; l--)
-        //         ut[l] = ut[l - 1];
-        //     ut[0] = u;
-        //     ut0_s[cls][t] = narma(cls);
-        // }
-        // for (t = 0; t <= step[mode]; t++)
-        //     yt0_s[cls][t] = ut0_s[cls][t + f_step];
+        
         cls++;
         if (flag_cut != 0)
             cls--;
@@ -254,22 +204,7 @@ int main()
             //printf("%d %d, %lf, %lf\n",cls, t, ut1_s[cls][t], yt1_s[cls][t]);
             t++;
         }
-        /*for (i = 0; i <= length; i++)
-        { // NARMA-X
-            ut[i] = 0.0;
-            yt[i] = 0.0;
-        }
-        for (t = 0; t <= step[mode] + f_step; t++)
-        {
-            u = u_min + u_delta * rand2();
-            for (l = length; l >= 1; l--)
-                ut[l] = ut[l - 1];
-            ut[0] = u;
-            ut1_s[cls][t] = narma(cls);
-        }
-        for (t = 0; t <= step[mode]; t++)
-            yt1_s[cls][t] = ut1_s[cls][t + f_step];
-        */
+        
         cls++;
         if (flag_cut != 0)
             cls--;
@@ -312,22 +247,7 @@ int main()
                 r++;
                 if (r >= 160 * n_smp) break;
             }
-            /*for (i = 0; i <= length; i++)
-            { // NARMA-X
-                ut[i] = 0.0;
-                yt[i] = 0.0;
-            }
-            for (t = 0; t <= step[mode] + f_step; t++)
-            {
-                u = u_min + u_delta * rand2();
-                for (l = length; l >= 1; l--)
-                    ut[l] = ut[l - 1];
-                ut[0] = u;
-                ut2_s[cls][smp][t] = narma(cls);
-            }
-            for (t = 0; t <= step[mode]; t++)
-                yt2_s[cls][smp][t] = ut2_s[cls][smp][t + f_step];
-            */
+           
             smp++;
             if (flag_cut != 0)
                 smp--;
@@ -363,12 +283,10 @@ int main()
     /*- Parameters -> Data file -*/
 
     fprintf(fp1, "# n_rsv=%d n_size=%d k_con=%d\n", n_rsv, n_size, k_con);
-    fprintf(fp1,"# step: train=%d, val.=%d, test=%d, n_smp=%d\n",step[0],step[1],step[2],n_smp);
+    fprintf(fp1,"# step: train=%d, val=%d, test=%d, n_smp=%d\n",step[0],step[1],step[2],n_smp);
     fprintf(fp1, "# alpha: [%f,%f], d_alpha=%f\n", alpha_min, alpha_max, d_alpha);
     fprintf(fp1, "# sigma: [%f,%f], d_sigma=%f\n", sigma_min, sigma_max, d_sigma);
-    fprintf(fp1, "# NARMA: f_step=%d\n", f_step);
-    //fprintf(fp1, "#  cls=0: tau=%d, k1=%f, k2=%f, k3=%f, k4=%f\n", tau[0], k1[0], k2[0], k3[0], k4[0]);
-    //fprintf(fp1, "#  cls=1: tau=%d, k1=%f, k2=%f, k3=%f, k4=%f\n", tau[1], k1[1], k2[1], k3[1], k4[1]);
+    fprintf(fp1, "# prediction: f_step=%d\n", f_step);
     fprintf(fp1, "# --- file format ---\n");
     fprintf(fp1, "# p, acc_rate, err_rate, (sigma), (alpha), (lambda)\n");
     fprintf(fp1, "\n");
@@ -1042,39 +960,3 @@ double conj_grad(void)
     // printf("ratio=%e \n",r_norm/b_norm);
 }
 
-/*==========   function narma   ==========*/
-
-double narma(int cls)
-{
-    int i;
-    double sum;
-
-    sum = 0.0;
-    for (i = tau[cls] + 1; i >= 1; i--)
-    { // for(i=tau; i>=1; i--){
-        yt[i] = yt[i - 1];
-        sum = sum + yt[i];
-    }
-
-    yt[0] = k1[cls] * yt[1] + k2[cls] * yt[1] * sum + k3[cls] * ut[tau[cls]] * ut[0] + k4[cls];
-    if (tau[cls] > 9)
-        yt[0] = tanh(yt[0]); // NARMA(tau>=10)
-                             /*
-                                yt[0]=k1[cls]*yt[1]+k2[cls]*yt[1]*sum+k3[cls]*ut[tau[cls]]*ut[1]+k4[cls];
-                                if(tau[cls]>1)
-                                  yt[0]=tanh(yt[0]); // NARMA(tau>=10)
-                             */
-    //... cutt-off bound ...
-    if (yt[0] > 1.0)
-    {
-        yt[0] = 1.0;
-        flag_cut = 1;
-    }
-    else if (yt[0] < -1.0)
-    {
-        yt[0] = -1.0;
-        flag_cut = 1;
-    }
-
-    return (yt[0]);
-}

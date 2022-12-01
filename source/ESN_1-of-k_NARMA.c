@@ -19,6 +19,9 @@
 #include <string>
 #include <cstdlib>
 #include <iostream>
+
+
+
 using namespace std;
 #define epsilon_conv 1.0e-8
 
@@ -88,7 +91,9 @@ int main()
     double acc_rate, err_rate;             // accuracy & error rates 正答率、誤差率
     double acc_av[22], err_av[22];
 
-    n_rsv = 1;    // #(Reservoir samples)　リザーバを10個用意して平均とる？
+
+
+    n_rsv = 10;    // #(Reservoir samples)　リザーバを10個用意して平均とる？
     type_rsv = 1; // Reservoir type: ESN rand2.(1)
     n_size = 100; // # units　ユニットの数
     k_con = 10;   //ユニット一個に結合している結合数？
