@@ -125,7 +125,7 @@ int main()
     double acc_rate, err_rate;             // accuracy & error rates
     double acc_av[22], err_av[22];
 
-    n_rsv = 1;   // #(Reservoir samples)
+    n_rsv = 10;   // #(Reservoir samples)
     type_rsv = 1; // Reservoir type: ESN rand2.(1)
     n_size = 100; // # units
     k_con = 10;
@@ -147,8 +147,8 @@ int main()
     //n_smp = 500;                   // #(test data sets)/2
 
     p0 = 0.0;
-    dp = 0.2;
-    m_max = 5; // # mixture rates; p=#(non.-lin.)/#(total)
+    dp = 0.1;
+    m_max = 10; // # mixture rates; p=#(non.-lin.)/#(total)
     n_reg = 19;
     dpw = 0.25;
 
@@ -198,8 +198,6 @@ int main()
 
     //... training data ... mode=0(train.)
 
-    
-    mode = 0;
     cls = 0;
     FILE *fp_;
     
@@ -226,7 +224,7 @@ int main()
     char filename6[] = "total-musi_n_test.csv";
     fopen_input_output_test(filename5,ut2_s[NOTHING_CLASS],yt2_s[NOTHING_CLASS], 160);
     fopen_input_output_test(filename6,ut2_s[MUSHI_N_CLASS],yt2_s[MUSHI_N_CLASS], 160);
-    mode = 2;
+
  
 
     //   smp=n_smp;
