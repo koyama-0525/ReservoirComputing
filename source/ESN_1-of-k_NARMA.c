@@ -183,9 +183,9 @@ int main()
     time_t t1 = time(NULL);
     struct tm tm = *localtime(&t1);
     sprintf(date, "%d-%d-%d_%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    char filename11[50] = "input_1-of-k/acc_";
-    char filename12[50] = "input_1-of-k/x0_";
-    char filename13[50] = "input_1-of-k/x1_";
+    char filename11[50] = "output_1-of-k/acc_";
+    char filename12[50] = "output_1-of-k/x0_";
+    char filename13[50] = "output_1-of-k/x1_";
     strcat(filename11, date);
     strcat(filename12, date);
     strcat(filename13, date);
@@ -203,8 +203,8 @@ int main()
 
     //... training data ... mode=0(train.)
 
-    char filename1[] = "total-nasi_training.csv";
-    char filename2[] = "total-musi_n_training.csv";
+    char filename1[] = "input/total-nasi_training.csv";
+    char filename2[] = "input/total-musi_n_training.csv";
     fopen_input_output(filename1,ut0_s[NOTHING_CLASS]);
     fopen_input_output(filename2,ut0_s[MUSHI_N_CLASS]);
 
@@ -213,8 +213,8 @@ int main()
 
     //... validation data ... mode=1(val.)
 
-    char filename3[] = "total-nasi_validation.csv";
-    char filename4[] = "total-musi_n_validation.csv";
+    char filename3[] = "input/total-nasi_validation.csv";
+    char filename4[] = "input/total-musi_n_validation.csv";
     fopen_input_output(filename3,ut1_s[NOTHING_CLASS]);
     fopen_input_output(filename4,ut1_s[MUSHI_N_CLASS]);
     
@@ -222,8 +222,8 @@ int main()
     //     fprintf(fp3,"%d %f %f %f %f\n",t,ut1_s[0][t],yt1_s[0][t],ut1_s[1][t],yt1_s[1][t]);
 
     //... test data ... mode=2(test)
-    char filename5[] = "total-nasi_test.csv";
-    char filename6[] = "total-musi_n_test.csv";
+    char filename5[] = "input/total-nasi_test.csv";
+    char filename6[] = "input/total-musi_n_test.csv";
     fopen_input_output_test(filename5,ut2_s[NOTHING_CLASS], 160);
     fopen_input_output_test(filename6,ut2_s[MUSHI_N_CLASS], 160);
 
@@ -262,8 +262,6 @@ int main()
     fprintf(fp1, "# alpha: [%f,%f], d_alpha=%f\n", alpha_min, alpha_max, d_alpha);
     fprintf(fp1, "# sigma: [%f,%f], d_sigma=%f\n", sigma_min, sigma_max, d_sigma);
     fprintf(fp1, "# NARMA: f_step=%d\n", f_step);
-    // fprintf(fp1,"#  cls=0: tau=%d, k1=%f, k2=%f, k3=%f, k4=%f\n",tau[0],k1[0],k2[0],k3[0],k4[0]);
-    // fprintf(fp1,"#  cls=1: tau=%d, k1=%f, k2=%f, k3=%f, k4=%f\n",tau[1],k1[1],k2[1],k3[1],k4[1]);
     fprintf(fp1, "# --- file format ---\n");
     fprintf(fp1, "# p, acc_rate, err_rate, (sigma), (alpha), (lambda)\n");
     fprintf(fp1, "\n");
