@@ -132,7 +132,7 @@ int main()
 
     n_cls = 2; // #(signal classes)
     wash_out = 1440;
-    wash_out_test = 80;
+    wash_out_test = 79;
     step[0] = 1440 + wash_out;     // training
     step[1] = 1440 + wash_out;     // validation
     step[2] = 80 + wash_out_test; // test
@@ -197,7 +197,7 @@ int main()
     f_step = 1; // 予測ステップ数
 
     //... training data ... mode=0(train.)
-
+    
     cls = 0;
     FILE *fp_;
     
@@ -225,7 +225,7 @@ int main()
     fopen_input_output_test(filename5,ut2_s[NOTHING_CLASS],yt2_s[NOTHING_CLASS], 160);
     fopen_input_output_test(filename6,ut2_s[MUSHI_N_CLASS],yt2_s[MUSHI_N_CLASS], 160);
 
- 
+
 
     //   smp=n_smp;
     //   for(t=0; t<=step[mode]; t++)

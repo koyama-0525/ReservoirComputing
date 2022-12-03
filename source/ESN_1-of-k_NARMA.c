@@ -134,7 +134,7 @@ int main()
 
     n_cls = 2; // #(signal classes)
     wash_out = 1440;
-    wash_out_test = 80;
+    wash_out_test = 79;
     step[0] = 1440 + wash_out;    // training
     step[1] = 1440 + wash_out;    // validation
     step[2] = 80 + wash_out_test; // test
@@ -205,6 +205,7 @@ int main()
 
     char filename1[] = "input/total-nasi_training.csv";
     char filename2[] = "input/total-musi_n_training.csv";
+    //char filename2[] = "input/total-zenmen_n_training.csv";
     fopen_input_output(filename1,ut0_s[NOTHING_CLASS]);
     fopen_input_output(filename2,ut0_s[MUSHI_N_CLASS]);
 
@@ -215,6 +216,7 @@ int main()
 
     char filename3[] = "input/total-nasi_validation.csv";
     char filename4[] = "input/total-musi_n_validation.csv";
+    //char filename4[] = "input/total-zenmen_n_validation.csv";
     fopen_input_output(filename3,ut1_s[NOTHING_CLASS]);
     fopen_input_output(filename4,ut1_s[MUSHI_N_CLASS]);
     
@@ -224,8 +226,9 @@ int main()
     //... test data ... mode=2(test)
     char filename5[] = "input/total-nasi_test.csv";
     char filename6[] = "input/total-musi_n_test.csv";
-    fopen_input_output_test(filename5,ut2_s[NOTHING_CLASS], 160);
-    fopen_input_output_test(filename6,ut2_s[MUSHI_N_CLASS], 160);
+    //char filename6[] = "input/total-zenmen_n_test.csv";
+    fopen_input_output_test(filename5,ut2_s[NOTHING_CLASS],160);
+    fopen_input_output_test(filename6,ut2_s[MUSHI_N_CLASS],160);
 
  
 
@@ -402,12 +405,12 @@ int main()
                                 u = ut0_s[c1][t]; // input signal: mode=0 (training)
 
                                 /*..... Reservoir update .....*/
-                                if (t % 80 == 0)
-                                {
-                                    x0[0] = 1.0;
-                                    for (n = 1; n <= n_size; n++)
-                                        x0[n] = 0.0;
-                                }
+                                // if (t % 80 == 0)
+                                // {
+                                //     x0[0] = 1.0;
+                                //     for (n = 1; n <= n_size; n++)
+                                //         x0[n] = 0.0;
+                                // }
                                 reservoir(u);
 
                                 /*..... Statistical quantities for Error .....*/
@@ -509,12 +512,12 @@ int main()
                                 u = ut1_s[c1][t]; // mode=1 (validation)
 
                                 //..... Reservoir update .....
-                                if (t % 80 == 0)
-                                {
-                                    x0[0] = 1.0;
-                                    for (n = 1; n <= n_size; n++)
-                                        x0[n] = 0.0;
-                                }
+                                // if (t % 80 == 0)
+                                // {
+                                //     x0[0] = 1.0;
+                                //     for (n = 1; n <= n_size; n++)
+                                //         x0[n] = 0.0;
+                                // }
                                 reservoir(u);
 
                                 //..... Reservoir output .....
