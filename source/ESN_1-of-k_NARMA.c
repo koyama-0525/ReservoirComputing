@@ -24,7 +24,9 @@
 using namespace std;
 #define epsilon_conv 1.0e-8
 #define NOTHING_CLASS (0)
-#define MUSHI_N_CLASS (1)
+//#define MUSHI_N_CLASS (1)
+//#define SITA_P_CLASS (1)
+#define ZENMEN_N_CLASS (1)
 
 void fopen_input_output(char *filename, double *a)
 {
@@ -133,7 +135,7 @@ int main()
     k_con = 10;   //ユニット一個に結合している結合数？
 
     n_cls = 2; // #(signal classes)
-    wash_out = 1440;
+    wash_out = 1439;
     wash_out_test = 79;
     step[0] = 1440 + wash_out;    // training
     step[1] = 1440 + wash_out;    // validation
@@ -161,8 +163,6 @@ int main()
     sigma_max = sigma_min + d_sigma * (double)j1_max;
     alpha_max = alpha_min + d_alpha * (double)j2_max;
 
-    pi = 3.1415926535897932;
-    pi2 = 2.0 * pi;
 
     seed1 = 1.0; // seed for rand2()
     seed2 = 5.0; // seed for rand2om ESN realization
@@ -183,9 +183,9 @@ int main()
     time_t t1 = time(NULL);
     struct tm tm = *localtime(&t1);
     sprintf(date, "%d-%d-%d_%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    char filename11[50] = "output_1-of-k/acc_";
-    char filename12[50] = "output_1-of-k/x0_";
-    char filename13[50] = "output_1-of-k/x1_";
+    char filename11[50] = "output_1-of-k/zenmen_n/acc_";
+    char filename12[50] = "output_1-of-k/zenmen_n/x0_";
+    char filename13[50] = "output_1-of-k/zenmen_n/x1_";
     strcat(filename11, date);
     strcat(filename12, date);
     strcat(filename13, date);
@@ -204,10 +204,9 @@ int main()
     //... training data ... mode=0(train.)
 
     char filename1[] = "input/total-nasi_training.csv";
-    char filename2[] = "input/total-musi_n_training.csv";
-    //char filename2[] = "input/total-zenmen_n_training.csv";
+    char filename2[] = "input/total-zenmen_n_training.csv";
     fopen_input_output(filename1,ut0_s[NOTHING_CLASS]);
-    fopen_input_output(filename2,ut0_s[MUSHI_N_CLASS]);
+    fopen_input_output(filename2,ut0_s[ZENMEN_N_CLASS]);
 
     //   for(t=0; t<=step[mode]; t++)
     //     fprintf(fp3,"%d %f %f %f %f\n",t,ut0_s[0][t],yt0_s[0][t],ut0_s[1][t],yt0_s[1][t]);
@@ -215,20 +214,18 @@ int main()
     //... validation data ... mode=1(val.)
 
     char filename3[] = "input/total-nasi_validation.csv";
-    char filename4[] = "input/total-musi_n_validation.csv";
-    //char filename4[] = "input/total-zenmen_n_validation.csv";
+    char filename4[] = "input/total-zenmen_n_validation.csv";
     fopen_input_output(filename3,ut1_s[NOTHING_CLASS]);
-    fopen_input_output(filename4,ut1_s[MUSHI_N_CLASS]);
+    fopen_input_output(filename4,ut1_s[ZENMEN_N_CLASS]);
     
     //   for(t=0; t<=step[mode]; t++)
     //     fprintf(fp3,"%d %f %f %f %f\n",t,ut1_s[0][t],yt1_s[0][t],ut1_s[1][t],yt1_s[1][t]);
 
     //... test data ... mode=2(test)
     char filename5[] = "input/total-nasi_test.csv";
-    char filename6[] = "input/total-musi_n_test.csv";
-    //char filename6[] = "input/total-zenmen_n_test.csv";
+    char filename6[] = "input/total-zenmen_n_test.csv";
     fopen_input_output_test(filename5,ut2_s[NOTHING_CLASS],160);
-    fopen_input_output_test(filename6,ut2_s[MUSHI_N_CLASS],160);
+    fopen_input_output_test(filename6,ut2_s[ZENMEN_N_CLASS],160);
 
  
 
@@ -405,12 +402,12 @@ int main()
                                 u = ut0_s[c1][t]; // input signal: mode=0 (training)
 
                                 /*..... Reservoir update .....*/
-                                // if (t % 80 == 0)
-                                // {
-                                //     x0[0] = 1.0;
-                                //     for (n = 1; n <= n_size; n++)
-                                //         x0[n] = 0.0;
-                                // }
+                                if (t % 80 == 0)
+                                {
+                                    x0[0] = 1.0;
+                                    for (n = 1; n <= n_size; n++)
+                                        x0[n] = 0.0;
+                                }
                                 reservoir(u);
 
                                 /*..... Statistical quantities for Error .....*/
@@ -512,12 +509,12 @@ int main()
                                 u = ut1_s[c1][t]; // mode=1 (validation)
 
                                 //..... Reservoir update .....
-                                // if (t % 80 == 0)
-                                // {
-                                //     x0[0] = 1.0;
-                                //     for (n = 1; n <= n_size; n++)
-                                //         x0[n] = 0.0;
-                                // }
+                                if (t % 80 == 0)
+                                {
+                                    x0[0] = 1.0;
+                                    for (n = 1; n <= n_size; n++)
+                                        x0[n] = 0.0;
+                                }
                                 reservoir(u);
 
                                 //..... Reservoir output .....
