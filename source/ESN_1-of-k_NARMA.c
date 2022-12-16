@@ -94,7 +94,7 @@ int main()
     FILE *fp1, *fp2, *fp3;
 
     int no, n_rsv, type_rsv;                       // reservoir No., Type　n_rsv>>リザーバの数。=10で初期化。10この平均をとる。 type_rsv=1で初期化>>eservoir type: ESN rand2.(1)
-    int t, step[3], wash_out, wash_out_test, mode; // step[0]=1000+wash_out,step[1]=1000+wash_out,step[2]=100+wash_out_test,wash_out=500,wash_out_test=50
+    int t, step[6], wash_out, wash_out_test, mode; // step[0]=1000+wash_out,step[1]=1000+wash_out,step[2]=100+wash_out_test,wash_out=500,wash_out_test=50
     int count_train, count_val, count_test;
     int n, k;
     int unit_idx[505], n_tmp, n_seg;
@@ -135,11 +135,14 @@ int main()
     k_con = 10;   //ユニット一個に結合している結合数？
 
     n_cls = 2; // #(signal classes)
-    wash_out = 1439;
+    wash_out = 99;
     wash_out_test = 79;
-    step[0] = 1440 + wash_out;    // training
-    step[1] = 1440 + wash_out;    // validation
+    step[0] = 5700 + wash_out;     // training
+    step[1] = 5500 + wash_out;     // validation
     step[2] = 80 + wash_out_test; // test
+    step[3] = 7000 + wash_out;     // training
+    step[4] = 4700 + wash_out;     // validation
+    step[5] = 80 + wash_out_test; // test
     n_smp = 18;
     // wash_out=500;
     // wash_out_test=50;
@@ -183,9 +186,9 @@ int main()
     time_t t1 = time(NULL);
     struct tm tm = *localtime(&t1);
     sprintf(date, "%d-%d-%d_%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    char filename11[50] = "output_1-of-k/acc_";
-    char filename12[50] = "output_1-of-k/x0_";
-    char filename13[50] = "output_1-of-k/x1_";
+    char filename11[50] = "output_1-of-k/musi_n/acc_";
+    char filename12[50] = "output_1-of-k/musi_n/x0_";
+    char filename13[50] = "output_1-of-k/musi_n/x1_";
     strcat(filename11, date);
     strcat(filename12, date);
     strcat(filename13, date);
@@ -396,7 +399,7 @@ int main()
                             if (c1 == cls)
                                 target_r = 1.0; //信号がc1のとき目標出力値を１で表す
 
-                            for (t = 0; t <= step[0]; t++)
+                            for (t = 0; t <= step[0 + cls * 3]; t++)
                             {
 
                                 u = ut0_s[c1][t]; // input signal: mode=0 (training)
@@ -406,7 +409,7 @@ int main()
                                 // {
                                 //     x0[0] = 1.0;
                                 //     for (n = 1; n <= n_size; n++)
-                                //         x0[n] = 1.0;
+                                //         x0[n] = 0.0;
                                 // }
                                 reservoir(u);
 
@@ -503,7 +506,7 @@ int main()
                             if (c1 == cls)
                                 t_out = 1.0;
 
-                            for (t = 0; t <= step[1]; t++)
+                            for (t = 0; t <= step[1 + cls * 3]; t++)
                             {
 
                                 u = ut1_s[c1][t]; // mode=1 (validation)
@@ -513,7 +516,7 @@ int main()
                                 // {
                                 //     x0[0] = 1.0;
                                 //     for (n = 1; n <= n_size; n++)
-                                //         x0[n] = 1.0;
+                                //         x0[n] = 0.0;
                                 // }
                                 reservoir(u);
 
@@ -947,6 +950,3 @@ double conj_grad(void) //共役勾配法
     return 0.0;
     // printf("ratio=%e \n",r_norm/b_norm);
 }
-
-
-

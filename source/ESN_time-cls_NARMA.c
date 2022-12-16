@@ -23,7 +23,7 @@
 using namespace std;
 #define epsilon_conv 1.0e-8
 #define NOTHING_CLASS (0)
-#define MUSHI_P_CLASS (1)
+#define MUSHI_N_CLASS (1)
 // #define SITA_P_CLASS (1)
 //#define ZENMEN_N_CLASS (1)
 
@@ -93,7 +93,7 @@ int main()
     FILE *fp1, *fp2, *fp3;
 
     int no, n_rsv, type_rsv; // reservoir No., Type
-    int t, step[3], wash_out, wash_out_test, mode;
+    int t, step[6], wash_out, wash_out_test, mode;
     int count_train, count_val, count_test;
     int n, k;
     int unit_idx[505], n_tmp, n_seg;
@@ -133,11 +133,14 @@ int main()
     k_con = 10;
 
     n_cls = 2; // #(signal classes)
-    wash_out = 1440;
+    wash_out = 99;
     wash_out_test = 79;
-    step[0] = 1440 + wash_out;     // training
-    step[1] = 1440 + wash_out;     // validation
+    step[0] = 5700 + wash_out;     // training
+    step[1] = 5500 + wash_out;     // validation
     step[2] = 80 + wash_out_test; // test
+    step[3] = 7000 + wash_out;     // training
+    step[4] = 4700 + wash_out;     // validation
+    step[5] = 80 + wash_out_test; // test
     n_smp = 18;
 
     //wash_out = 500;
@@ -182,9 +185,9 @@ int main()
     time_t t1 = time(NULL);
     struct tm tm = *localtime(&t1);
     sprintf(date, "%d-%d-%d_%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    char filename11[50] = "output_time_cls/musi_p/acc_";
-    char filename12[50] = "output_time_cls/musi_p/x0_";
-    char filename13[50] = "output_time_cls/musi_p/x1_";
+    char filename11[50] = "output_time_cls/musi_n/acc_";
+    char filename12[50] = "output_time_cls/musi_n/x0_";
+    char filename13[50] = "output_time_cls/musi_n/x1_";
     strcat(filename11, date);
     strcat(filename12, date);
     strcat(filename13, date);
@@ -204,9 +207,9 @@ int main()
     FILE *fp_;
     
     char filename1[] = "input/total-nasi_training.csv";
-    char filename2[] = "input/total-musi_p_training.csv";
+    char filename2[] = "input/total-musi_n_training.csv";
     fopen_input_output(filename1,ut0_s[NOTHING_CLASS],yt0_s[NOTHING_CLASS]);
-    fopen_input_output(filename2,ut0_s[MUSHI_P_CLASS],yt0_s[MUSHI_P_CLASS]);
+    fopen_input_output(filename2,ut0_s[MUSHI_N_CLASS],yt0_s[MUSHI_N_CLASS]);
 
     //   for(t=0; t<=step[mode]; t++)
     //     fprintf(fp3,"%d %f %f %f %f\n",t,ut0_s[0][t],yt0_s[0][t],ut0_s[1][t],yt0_s[1][t]);
@@ -214,18 +217,18 @@ int main()
     //... validation data ... mode=1(val.)
 
     char filename3[] = "input/total-nasi_validation.csv";
-    char filename4[] = "input/total-musi_p_validation.csv";
+    char filename4[] = "input/total-musi_n_validation.csv";
     fopen_input_output(filename3,ut1_s[NOTHING_CLASS],yt1_s[NOTHING_CLASS]);
-    fopen_input_output(filename4,ut1_s[MUSHI_P_CLASS],yt1_s[MUSHI_P_CLASS]);
+    fopen_input_output(filename4,ut1_s[MUSHI_N_CLASS],yt1_s[MUSHI_N_CLASS]);
     
     //   for(t=0; t<=step[mode]; t++)
     //     fprintf(fp3,"%d %f %f %f %f\n",t,ut1_s[0][t],yt1_s[0][t],ut1_s[1][t],yt1_s[1][t]);
 
     //... test data ... mode=2(test)
     char filename5[] = "input/total-nasi_test.csv";
-    char filename6[] = "input/total-musi_p_test.csv";
+    char filename6[] = "input/total-musi_n_test.csv";
     fopen_input_output_test(filename5,ut2_s[NOTHING_CLASS],yt2_s[NOTHING_CLASS], 160);
-    fopen_input_output_test(filename6,ut2_s[MUSHI_P_CLASS],yt2_s[MUSHI_P_CLASS], 160);
+    fopen_input_output_test(filename6,ut2_s[MUSHI_N_CLASS],yt2_s[MUSHI_N_CLASS], 160);
 
 
 
@@ -390,7 +393,7 @@ int main()
 
                         count_train = 0;
 
-                        for (t = 0; t <= step[0]; t++)
+                        for (t = 0; t <= step[0 + cls * 3]; t++)
                         {
                             u = ut0_s[cls][t]; // input signal: mode=0 (training)
 
@@ -493,7 +496,7 @@ int main()
 
                     for (cls = 0; cls <= n_cls - 1; cls++)
                     {   
-                        for (t = 0; t <= step[1]; t++)
+                        for (t = 0; t <= step[1 + cls * 3]; t++)
                         {
 
                             u = ut1_s[cls][t]; // mode=1 (validation)
@@ -708,6 +711,7 @@ int main()
                         }
                     }
                     mat_err[cls][c_rsv]++;
+                    // printf("%d %d %f\n", cls, c_rsv, mat_err[cls][c_rsv]);
 
                 } // Loop smp
             }     // Loop cls
@@ -716,6 +720,7 @@ int main()
             {
                 for (c2 = 0; c2 <= n_cls - 1; c2++)
                     mat_err[c1][c2] = mat_err[c1][c2] / (double)count_test;
+                    //printf("%d %d %lf\n", c1, c2, mat_err[c1][c2]);
             }
 
             acc_rate = 0.0; // accuracy rate
@@ -728,7 +733,7 @@ int main()
             alpha = alpha_min + d_alpha * (double)j2_test[m];
             sigma = sigma_min + d_sigma * (double)j1_test[m];
             lambda = lambda_val[lm_test[m]];
-            printf("%f %e %e %e %e %e\n",p,acc_rate,err_rate,sigma,alpha,lambda);
+            //printf("%f %e %e %e %e %e\n",p,acc_rate,err_rate,sigma,alpha,lambda);
 
             acc_av[m] = acc_av[m] + acc_rate;
             err_av[m] = err_av[m] + err_rate;
@@ -934,4 +939,3 @@ double conj_grad(void)
     return 0.0;
     // printf("ratio=%e \n",r_norm/b_norm);
 }
-
